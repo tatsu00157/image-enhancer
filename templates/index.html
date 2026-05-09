@@ -45,19 +45,21 @@
     .control-group input[type=range] { width: 100%; }
     .control-group select { width: 100%; padding: 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; }
 
-    #apply-btn {
+    #apply-btn, #download-btn {
       width: 100%;
       padding: 10px;
-      background: #4a90e2;
-      color: #fff;
       border: none;
       border-radius: 6px;
       font-size: 0.95rem;
       cursor: pointer;
-      margin-top: 4px;
+      margin-top: 8px;
     }
+    #apply-btn { background: #4a90e2; color: #fff; }
     #apply-btn:hover { background: #357abd; }
     #apply-btn:disabled { background: #aaa; cursor: not-allowed; }
+    #download-btn { background: #27ae60; color: #fff; display: none; }
+    #download-btn:hover { background: #1e8449; }
+    #download-btn:disabled { background: #aaa; cursor: not-allowed; }
 
     /* プレビュー */
     #previews { flex: 1; display: flex; gap: 16px; }
@@ -103,6 +105,7 @@
           </select>
         </div>
         <button id="apply-btn">補正を適用</button>
+        <button id="download-btn">ダウンロード</button>
         <div id="status"></div>
       </div>
 
@@ -127,15 +130,31 @@
     const previewImg = document.getElementById("preview-img");
     const errorMsg = document.getElementById("error-msg");
     const applyBtn = document.getElementById("apply-btn");
+    const downloadBtn = document.getElementById("download-btn");
     const status = document.getElementById("status");
 
     let currentFilename = null;
+    let currentParams = null;
 
-    // スライダー値の表示更新
+    let debounceTimer = null;
+
+    function schedulePreview() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { if (currentFilename) applyPreview(); }, 300);
+    }
+
+    // スライダー値の表示更新 + リアルタイムプレビュー
     ["brightness", "contrast"].forEach(id => {
       const slider = document.getElementById(id);
       const label = document.getElementById(`${id}-val`);
-      slider.addEventListener("input", () => { label.textContent = slider.value; });
+      slider.addEventListener("input", () => {
+        label.textContent = slider.value;
+        schedulePreview();
+      });
+    });
+
+    document.getElementById("white-balance").addEventListener("change", () => {
+      if (currentFilename) applyPreview();
     });
 
     // アップロード
@@ -168,14 +187,12 @@
       editor.classList.add("visible");
     }
 
-    // 補正適用
-    applyBtn.addEventListener("click", async () => {
-      if (!currentFilename) return;
-
+    // 補正適用（ボタン・リアルタイム共用）
+    async function applyPreview() {
       applyBtn.disabled = true;
       status.textContent = "処理中...";
 
-      const params = {
+      currentParams = {
         filename: currentFilename,
         brightness: parseInt(document.getElementById("brightness").value),
         contrast: parseInt(document.getElementById("contrast").value),
@@ -185,7 +202,7 @@
       const res = await fetch("/api/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body: JSON.stringify(currentParams),
       });
       const data = await res.json();
 
@@ -194,9 +211,43 @@
       } else {
         previewImg.src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
         status.textContent = "完了";
+        downloadBtn.style.display = "block";
       }
 
       applyBtn.disabled = false;
+    }
+
+    applyBtn.addEventListener("click", () => { if (currentFilename) applyPreview(); });
+
+    // ダウンロード
+    downloadBtn.addEventListener("click", async () => {
+      if (!currentFilename || !currentParams) return;
+
+      downloadBtn.disabled = true;
+      status.textContent = "ダウンロード準備中...";
+
+      const res = await fetch("/api/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(currentParams),
+      });
+
+      if (!res.ok) {
+        status.textContent = "ダウンロードに失敗しました";
+        downloadBtn.disabled = false;
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "enhanced.jpg";
+      a.click();
+      URL.revokeObjectURL(url);
+
+      status.textContent = "ダウンロード完了";
+      downloadBtn.disabled = false;
     });
   </script>
 </body>

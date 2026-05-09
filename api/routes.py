@@ -2,7 +2,7 @@ import os
 import uuid
 import cv2
 import numpy as np
-from flask import Blueprint, request, jsonify, send_from_directory, render_template
+from flask import Blueprint, request, jsonify, send_from_directory, render_template, send_file
 import config
 from core.brightness import adjust_brightness_contrast
 from core.color import adjust_white_balance
@@ -86,6 +86,30 @@ def preview():
     cv2.imwrite(preview_path, img)
 
     return jsonify({"preview_filename": preview_filename})
+
+
+@api_bp.route("/api/download", methods=["POST"])
+def download():
+    data = request.get_json()
+    if not data or "filename" not in data:
+        return jsonify({"error": "filenameが必要です"}), 400
+
+    img = load_image(data["filename"])
+    if img is None:
+        return jsonify({"error": "画像が見つかりません"}), 404
+
+    brightness = int(data.get("brightness", 0))
+    contrast = int(data.get("contrast", 0))
+    white_balance = data.get("white_balance", "auto")
+
+    img = adjust_brightness_contrast(img, brightness, contrast)
+    img = adjust_white_balance(img, white_balance)
+
+    download_filename = f"download_{data['filename'].split('.')[0]}.jpg"
+    download_path = os.path.join(config.UPLOAD_FOLDER, download_filename)
+    cv2.imwrite(download_path, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    return send_file(download_path, as_attachment=True, download_name="enhanced.jpg")
 
 
 @api_bp.route("/uploads/<filename>")
