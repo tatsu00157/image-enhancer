@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>画像補正アプリ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f5f5f5; color: #333; }
+    header { background: #2c2c2c; color: #fff; padding: 16px 24px; }
+    header h1 { font-size: 1.2rem; }
+    main { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+
+    /* アップロードゾーン */
+    #drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 8px;
+      background: #fff;
+      padding: 48px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #drop-zone.dragover { border-color: #4a90e2; background: #eef4ff; }
+    #drop-zone p { color: #888; margin-top: 8px; font-size: 0.9rem; }
+    #file-input { display: none; }
+    #error-msg { color: #c0392b; margin-top: 10px; font-size: 0.9rem; }
+
+    /* 補正エリア */
+    #editor { display: none; margin-top: 32px; gap: 24px; }
+    #editor.visible { display: flex; }
+
+    /* スライダーパネル */
+    #controls {
+      width: 240px;
+      flex-shrink: 0;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    #controls h2 { font-size: 0.95rem; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .control-group { margin-bottom: 18px; }
+    .control-group label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+    .control-group input[type=range] { width: 100%; }
+    .control-group select { width: 100%; padding: 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; }
+
+    #apply-btn {
+      width: 100%;
+      padding: 10px;
+      background: #4a90e2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    #apply-btn:hover { background: #357abd; }
+    #apply-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* プレビュー */
+    #previews { flex: 1; display: flex; gap: 16px; }
+    .preview-box { flex: 1; background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .preview-box h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
+    .preview-box img { width: 100%; border-radius: 4px; display: block; }
+    #status { font-size: 0.85rem; color: #888; margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header><h1>画像補正アプリ</h1></header>
+  <main>
+    <div id="drop-zone">
+      <svg width="40" height="40" fill="none" stroke="#aaa" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p>クリックまたはドラッグ&ドロップで画像をアップロード</p>
+      <p>JPG / PNG / WEBP &nbsp;|&nbsp; 最大 20MB</p>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp">
+    </div>
+    <div id="error-msg"></div>
+
+    <div id="editor">
+      <div id="controls">
+        <h2>補正設定</h2>
+        <div class="control-group">
+          <label>明るさ <span id="brightness-val">0</span></label>
+          <input type="range" id="brightness" min="-100" max="100" value="0">
+        </div>
+        <div class="control-group">
+          <label>コントラスト <span id="contrast-val">0</span></label>
+          <input type="range" id="contrast" min="-100" max="100" value="0">
+        </div>
+        <div class="control-group">
+          <label>ホワイトバランス</label>
+          <select id="white-balance">
+            <option value="auto">自動</option>
+            <option value="daylight">昼光</option>
+            <option value="fluorescent">蛍光灯</option>
+            <option value="incandescent">電球</option>
+          </select>
+        </div>
+        <button id="apply-btn">補正を適用</button>
+        <div id="status"></div>
+      </div>
+
+      <div id="previews">
+        <div class="preview-box">
+          <h3>補正前</h3>
+          <img id="original-img" src="" alt="補正前">
+        </div>
+        <div class="preview-box">
+          <h3>補正後</h3>
+          <img id="preview-img" src="" alt="補正後">
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    const editor = document.getElementById("editor");
+    const originalImg = document.getElementById("original-img");
+    const previewImg = document.getElementById("preview-img");
+    const errorMsg = document.getElementById("error-msg");
+    const applyBtn = document.getElementById("apply-btn");
+    const status = document.getElementById("status");
+
+    let currentFilename = null;
+
+    // スライダー値の表示更新
+    ["brightness", "contrast"].forEach(id => {
+      const slider = document.getElementById(id);
+      const label = document.getElementById(`${id}-val`);
+      slider.addEventListener("input", () => { label.textContent = slider.value; });
+    });
+
+    // アップロード
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => { if (fileInput.files[0]) uploadFile(fileInput.files[0]); });
+
+    async function uploadFile(file) {
+      errorMsg.textContent = "";
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorMsg.textContent = data.error || "アップロードに失敗しました";
+        return;
+      }
+
+      currentFilename = data.filename;
+      originalImg.src = `/uploads/${currentFilename}`;
+      previewImg.src = `/uploads/${currentFilename}`;
+      editor.classList.add("visible");
+    }
+
+    // 補正適用
+    applyBtn.addEventListener("click", async () => {
+      if (!currentFilename) return;
+
+      applyBtn.disabled = true;
+      status.textContent = "処理中...";
+
+      const params = {
+        filename: currentFilename,
+        brightness: parseInt(document.getElementById("brightness").value),
+        contrast: parseInt(document.getElementById("contrast").value),
+        white_balance: document.getElementById("white-balance").value,
+      };
+
+      const res = await fetch("/api/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        status.textContent = data.error || "エラーが発生しました";
+      } else {
+        previewImg.src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
+        status.textContent = "完了";
+      }
+
+      applyBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>
