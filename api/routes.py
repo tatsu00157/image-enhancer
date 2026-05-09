@@ -120,11 +120,19 @@ def download():
     img = apply_noise_reduction(img, noise_reduction)
     img = apply_sharpness(img, sharpness)
 
-    download_filename = f"download_{data['filename'].split('.')[0]}.jpg"
-    download_path = os.path.join(config.UPLOAD_FOLDER, download_filename)
-    cv2.imwrite(download_path, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    fmt = data.get("format", "jpg").lower()
+    if fmt not in ("jpg", "png"):
+        fmt = "jpg"
 
-    return send_file(download_path, as_attachment=True, download_name="enhanced.jpg")
+    download_filename = f"download_{data['filename'].split('.')[0]}.{fmt}"
+    download_path = os.path.join(config.UPLOAD_FOLDER, download_filename)
+
+    if fmt == "png":
+        cv2.imwrite(download_path, img)
+    else:
+        cv2.imwrite(download_path, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    return send_file(download_path, as_attachment=True, download_name=f"enhanced.{fmt}")
 
 
 @api_bp.route("/uploads/<filename>")
