@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}画像補正ツール — 画像をかんたん補正{% endblock %}
+{% block title %}PhotoTune — 画像をかんたん補正{% endblock %}
 
 {% block head %}
 <style>
@@ -11,7 +11,7 @@
   .steps { display: flex; gap: 16px; flex-wrap: wrap; }
   .step {
     flex: 1; min-width: 160px; background: #fff; border-radius: 10px; padding: 18px 16px;
-    text-align: center; box-shadow: 0 1px 4px rgba(233,30,140,0.1); border-top: 3px solid #f48cbf;
+    text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-top: 3px solid #f48cbf;
   }
   .step .num {
     display: inline-block; background: #e91e8c; color: #fff;
@@ -38,7 +38,7 @@
   /* スライダーパネル */
   #controls {
     width: 240px; flex-shrink: 0; background: #fff; border-radius: 10px; padding: 20px;
-    box-shadow: 0 1px 6px rgba(233,30,140,0.1);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
   }
   #controls h2 { font-size: 0.95rem; margin-bottom: 16px; border-bottom: 2px solid #fce4ec; padding-bottom: 8px; color: #e91e8c; }
   .control-group { margin-bottom: 14px; }
@@ -80,7 +80,7 @@
   #side-by-side { display: flex; gap: 16px; flex: 1; min-height: 0; }
   .preview-box {
     flex: 1; background: #fff; border-radius: 10px; padding: 12px;
-    box-shadow: 0 1px 6px rgba(233,30,140,0.1); position: relative;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08); position: relative;
     display: flex; flex-direction: column; min-height: 0;
   }
   .preview-box h3 { font-size: 0.82rem; color: #f48cbf; margin-bottom: 8px; font-weight: bold; flex-shrink: 0; }
@@ -91,7 +91,7 @@
 
   /* プレースホルダー */
   .preview-placeholder {
-    flex: 1; background: #fff8fb; border-radius: 6px;
+    flex: 1; background: #f4f4f6; border-radius: 6px;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 8px;
     color: #f0b8d4; font-size: 0.85rem; min-height: 0;
@@ -113,7 +113,7 @@
   /* 比較スライダー */
   #compare-view {
     flex: 1; display: none; background: #fff; border-radius: 10px;
-    box-shadow: 0 1px 6px rgba(233,30,140,0.1); padding: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08); padding: 12px;
     position: relative; flex-direction: column; min-height: 0;
   }
   #compare-view h3 { font-size: 0.82rem; color: #f48cbf; margin-bottom: 8px; font-weight: bold; flex-shrink: 0; }
@@ -137,7 +137,7 @@
     white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   }
   #compare-placeholder {
-    flex: 1; background: #fff8fb; border-radius: 6px;
+    flex: 1; background: #f4f4f6; border-radius: 6px;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 8px;
     color: #f0b8d4; font-size: 0.85rem;
@@ -155,7 +155,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: #fff8fb;
+      background: #f4f4f6;
       padding: 10px 0;
       max-height: 44vh;
     }
@@ -189,7 +189,7 @@
   .desc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
   .desc-card {
     background: #fff; border-radius: 10px; padding: 16px 18px;
-    box-shadow: 0 1px 4px rgba(233,30,140,0.08); border-left: 3px solid #f48cbf;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-left: 3px solid #f48cbf;
   }
   .desc-card h3 { font-size: 0.9rem; color: #e91e8c; margin-bottom: 6px; }
   .desc-card p { font-size: 0.83rem; color: #666; line-height: 1.7; }
