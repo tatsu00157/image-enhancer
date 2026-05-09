@@ -45,7 +45,7 @@
     .control-group input[type=range] { width: 100%; }
     .control-group select { width: 100%; padding: 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; }
 
-    #download-btn {
+    .btn {
       width: 100%;
       padding: 10px;
       border: none;
@@ -53,18 +53,46 @@
       font-size: 0.95rem;
       cursor: pointer;
       margin-top: 8px;
-      background: #27ae60;
-      color: #fff;
     }
+    #reset-btn { background: #f0f0f0; color: #555; }
+    #reset-btn:hover { background: #e0e0e0; }
+    #download-btn { background: #27ae60; color: #fff; }
     #download-btn:hover { background: #1e8449; }
     #download-btn:disabled { background: #aaa; cursor: not-allowed; }
 
     /* プレビュー */
     #previews { flex: 1; display: flex; gap: 16px; }
-    .preview-box { flex: 1; background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .preview-box {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      position: relative;
+    }
     .preview-box h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
     .preview-box img { width: 100%; border-radius: 4px; display: block; }
-    #status { font-size: 0.85rem; color: #888; margin-top: 8px; text-align: center; }
+
+    /* ローディングオーバーレイ */
+    #loading-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+    #loading-overlay.visible { display: flex; }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid #ddd;
+      border-top-color: #4a90e2;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -115,8 +143,8 @@
             <option value="incandescent">電球</option>
           </select>
         </div>
-        <button id="download-btn">ダウンロード</button>
-        <div id="status"></div>
+        <button id="reset-btn" class="btn">リセット</button>
+        <button id="download-btn" class="btn">ダウンロード</button>
       </div>
 
       <div id="previews">
@@ -127,6 +155,7 @@
         <div class="preview-box">
           <h3>補正後</h3>
           <img id="preview-img" src="" alt="補正後">
+          <div id="loading-overlay"><div class="spinner"></div></div>
         </div>
       </div>
     </div>
@@ -140,12 +169,16 @@
     const previewImg = document.getElementById("preview-img");
     const errorMsg = document.getElementById("error-msg");
     const downloadBtn = document.getElementById("download-btn");
-    const status = document.getElementById("status");
+    const resetBtn = document.getElementById("reset-btn");
+    const loadingOverlay = document.getElementById("loading-overlay");
 
     let currentFilename = null;
     let currentParams = null;
-
     let debounceTimer = null;
+
+    function setLoading(on) {
+      loadingOverlay.classList.toggle("visible", on);
+    }
 
     function schedulePreview() {
       clearTimeout(debounceTimer);
@@ -164,6 +197,18 @@
 
     document.getElementById("white-balance").addEventListener("change", () => {
       if (currentFilename) applyPreview();
+    });
+
+    // リセット
+    resetBtn.addEventListener("click", () => {
+      ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
+        const slider = document.getElementById(id);
+        slider.value = 0;
+        document.getElementById(`${id}-val`).textContent = "0";
+      });
+      document.getElementById("white-balance").value = "none";
+      previewImg.src = `/uploads/${currentFilename}`;
+      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none" };
     });
 
     // アップロード
@@ -199,7 +244,7 @@
 
     // 補正適用（リアルタイム）
     async function applyPreview() {
-      status.textContent = "処理中...";
+      setLoading(true);
 
       currentParams = {
         filename: currentFilename,
@@ -218,12 +263,11 @@
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        status.textContent = data.error || "エラーが発生しました";
-      } else {
+      if (res.ok) {
         previewImg.src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
-        status.textContent = "完了";
       }
+
+      setLoading(false);
     }
 
     // ダウンロード
@@ -231,7 +275,7 @@
       if (!currentFilename || !currentParams) return;
 
       downloadBtn.disabled = true;
-      status.textContent = "ダウンロード準備中...";
+      downloadBtn.textContent = "処理中...";
 
       const res = await fetch("/api/download", {
         method: "POST",
@@ -239,22 +283,18 @@
         body: JSON.stringify(currentParams),
       });
 
-      if (!res.ok) {
-        status.textContent = "ダウンロードに失敗しました";
-        downloadBtn.disabled = false;
-        return;
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "enhanced.jpg";
+        a.click();
+        URL.revokeObjectURL(url);
       }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "enhanced.jpg";
-      a.click();
-      URL.revokeObjectURL(url);
-
-      status.textContent = "ダウンロード完了";
       downloadBtn.disabled = false;
+      downloadBtn.textContent = "ダウンロード";
     });
   </script>
 </body>
