@@ -40,6 +40,26 @@ def encode_to_jpeg(img):
     return buf.tobytes()
 
 
+def apply_transforms(img, data):
+    rotation = int(data.get("rotation", 0))
+    flip_h = data.get("flip_h", False)
+    flip_v = data.get("flip_v", False)
+
+    if rotation == 90:
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    elif rotation == 180:
+        img = cv2.rotate(img, cv2.ROTATE_180)
+    elif rotation == 270:
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    if flip_h:
+        img = cv2.flip(img, 1)
+    if flip_v:
+        img = cv2.flip(img, 0)
+
+    return img
+
+
 @api_bp.route("/")
 def index():
     return render_template("index.html")
@@ -84,6 +104,7 @@ def preview():
     noise_reduction = int(data.get("noise_reduction", 0))
     shadow_correction = int(data.get("shadow_correction", 0))
 
+    img = apply_transforms(img, data)
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
     img = apply_shadow_correction(img, shadow_correction)
@@ -114,6 +135,7 @@ def download():
     noise_reduction = int(data.get("noise_reduction", 0))
     shadow_correction = int(data.get("shadow_correction", 0))
 
+    img = apply_transforms(img, data)
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
     img = apply_shadow_correction(img, shadow_correction)

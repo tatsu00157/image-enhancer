@@ -56,6 +56,17 @@
     }
     #reset-btn { background: #f0f0f0; color: #555; }
     #reset-btn:hover { background: #e0e0e0; }
+    .tool-btn {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 0.78rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fafafa;
+      cursor: pointer;
+      min-width: 56px;
+    }
+    .tool-btn:hover { background: #e8e8e8; }
     #download-btn { background: #27ae60; color: #fff; }
     #download-btn:hover { background: #1e8449; }
     #download-btn:disabled { background: #aaa; cursor: not-allowed; }
@@ -144,6 +155,15 @@
           </select>
         </div>
         <div class="control-group">
+          <label style="margin-bottom:8px;">回転・反転</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="tool-btn" id="rotate-l">↺ 左90°</button>
+            <button class="tool-btn" id="rotate-r">↻ 右90°</button>
+            <button class="tool-btn" id="flip-h">↔ 左右</button>
+            <button class="tool-btn" id="flip-v">↕ 上下</button>
+          </div>
+        </div>
+        <div class="control-group">
           <label>出力形式</label>
           <select id="output-format">
             <option value="jpg">JPG（ファイルサイズ小）</option>
@@ -182,6 +202,9 @@
     let currentFilename = null;
     let currentParams = null;
     let debounceTimer = null;
+    let rotation = 0;   // 0, 90, 180, 270
+    let flipH = false;
+    let flipV = false;
 
     function setLoading(on) {
       loadingOverlay.classList.toggle("visible", on);
@@ -206,6 +229,12 @@
       if (currentFilename) applyPreview();
     });
 
+    // 回転・反転ボタン
+    document.getElementById("rotate-l").addEventListener("click", () => { rotation = (rotation + 270) % 360; if (currentFilename) applyPreview(); });
+    document.getElementById("rotate-r").addEventListener("click", () => { rotation = (rotation + 90) % 360; if (currentFilename) applyPreview(); });
+    document.getElementById("flip-h").addEventListener("click", () => { flipH = !flipH; if (currentFilename) applyPreview(); });
+    document.getElementById("flip-v").addEventListener("click", () => { flipV = !flipV; if (currentFilename) applyPreview(); });
+
     // リセット
     resetBtn.addEventListener("click", () => {
       ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
@@ -214,8 +243,9 @@
         document.getElementById(`${id}-val`).textContent = "0";
       });
       document.getElementById("white-balance").value = "none";
+      rotation = 0; flipH = false; flipV = false;
       previewImg.src = `/uploads/${currentFilename}`;
-      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none" };
+      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
     });
 
     // アップロード
@@ -261,6 +291,9 @@
         noise_reduction: parseInt(document.getElementById("noise_reduction").value),
         shadow_correction: parseInt(document.getElementById("shadow_correction").value),
         white_balance: document.getElementById("white-balance").value,
+        rotation: rotation,
+        flip_h: flipH,
+        flip_v: flipV,
       };
 
       const res = await fetch("/api/preview", {
