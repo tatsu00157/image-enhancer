@@ -8,6 +8,7 @@ from core.brightness import adjust_brightness_contrast
 from core.color import adjust_white_balance
 from core.sharpen import apply_sharpness
 from core.noise import apply_noise_reduction
+from core.shadow import apply_shadow_correction
 
 api_bp = Blueprint("api", __name__)
 
@@ -81,9 +82,11 @@ def preview():
     white_balance = data.get("white_balance", "none")
     sharpness = int(data.get("sharpness", 0))
     noise_reduction = int(data.get("noise_reduction", 0))
+    shadow_correction = int(data.get("shadow_correction", 0))
 
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
+    img = apply_shadow_correction(img, shadow_correction)
     img = apply_noise_reduction(img, noise_reduction)
     img = apply_sharpness(img, sharpness)
 
@@ -109,9 +112,11 @@ def download():
     white_balance = data.get("white_balance", "none")
     sharpness = int(data.get("sharpness", 0))
     noise_reduction = int(data.get("noise_reduction", 0))
+    shadow_correction = int(data.get("shadow_correction", 0))
 
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
+    img = apply_shadow_correction(img, shadow_correction)
     img = apply_noise_reduction(img, noise_reduction)
     img = apply_sharpness(img, sharpness)
 
