@@ -71,8 +71,23 @@
     #download-btn:hover { background: #1e8449; }
     #download-btn:disabled { background: #aaa; cursor: not-allowed; }
 
-    /* プレビュー */
-    #previews { flex: 1; display: flex; gap: 16px; }
+    /* プレビューエリア */
+    #preview-area { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+    /* 表示切り替えボタン */
+    #view-toggle { display: flex; gap: 8px; }
+    .view-btn {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .view-btn.active { background: #2c2c2c; color: #fff; border-color: #2c2c2c; }
+
+    /* 並べて表示 */
+    #side-by-side { display: flex; gap: 16px; }
     .preview-box {
       flex: 1;
       background: #fff;
@@ -85,7 +100,7 @@
     .preview-box img { width: 100%; border-radius: 4px; display: block; }
 
     /* ローディングオーバーレイ */
-    #loading-overlay {
+    .loading-overlay {
       display: none;
       position: absolute;
       inset: 0;
@@ -94,7 +109,7 @@
       align-items: center;
       justify-content: center;
     }
-    #loading-overlay.visible { display: flex; }
+    .loading-overlay.visible { display: flex; }
     .spinner {
       width: 36px;
       height: 36px;
@@ -104,6 +119,56 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 比較スライダー */
+    #compare-view {
+      display: none;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 12px;
+      position: relative;
+    }
+    #compare-view h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
+    #compare-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
+      cursor: ew-resize;
+      user-select: none;
+    }
+    #compare-after { display: block; width: 100%; }
+    #compare-before-wrapper {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      overflow: hidden;
+      width: 50%;
+    }
+    #compare-before { display: block; width: 100%; max-width: none; position: absolute; top: 0; left: 0; }
+    #compare-handle {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: #fff;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #compare-handle::after {
+      content: "◀ ▶";
+      position: absolute;
+      background: #fff;
+      border-radius: 50px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      color: #555;
+      white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    /* 比較スライダー内のローディング */
+    #compare-view .loading-overlay { border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -174,15 +239,37 @@
         <button id="download-btn" class="btn">ダウンロード</button>
       </div>
 
-      <div id="previews">
-        <div class="preview-box">
-          <h3>補正前</h3>
-          <img id="original-img" src="" alt="補正前">
+      <div id="preview-area">
+        <!-- 表示切り替え -->
+        <div id="view-toggle">
+          <button class="view-btn active" data-view="side">並べて表示</button>
+          <button class="view-btn" data-view="compare">スライダー比較</button>
         </div>
-        <div class="preview-box">
-          <h3>補正後</h3>
-          <img id="preview-img" src="" alt="補正後">
-          <div id="loading-overlay"><div class="spinner"></div></div>
+
+        <!-- 並べて表示 -->
+        <div id="side-by-side">
+          <div class="preview-box">
+            <h3>補正前</h3>
+            <img id="original-img" src="" alt="補正前">
+          </div>
+          <div class="preview-box">
+            <h3>補正後</h3>
+            <img id="preview-img" src="" alt="補正後">
+            <div class="loading-overlay" id="loading-side"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- スライダー比較 -->
+        <div id="compare-view">
+          <h3>補正前 ◀ドラッグ▶ 補正後</h3>
+          <div id="compare-container">
+            <img id="compare-after" src="" alt="補正後">
+            <div id="compare-before-wrapper">
+              <img id="compare-before" src="" alt="補正前">
+            </div>
+            <div id="compare-handle"></div>
+          </div>
+          <div class="loading-overlay" id="loading-compare"><div class="spinner"></div></div>
         </div>
       </div>
     </div>
@@ -197,23 +284,44 @@
     const errorMsg = document.getElementById("error-msg");
     const downloadBtn = document.getElementById("download-btn");
     const resetBtn = document.getElementById("reset-btn");
-    const loadingOverlay = document.getElementById("loading-overlay");
+    const loadingSide = document.getElementById("loading-side");
+    const loadingCompare = document.getElementById("loading-compare");
+    const sideBySide = document.getElementById("side-by-side");
+    const compareView = document.getElementById("compare-view");
+    const compareAfter = document.getElementById("compare-after");
+    const compareBefore = document.getElementById("compare-before");
+    const compareWrapper = document.getElementById("compare-before-wrapper");
+    const compareHandle = document.getElementById("compare-handle");
+    const compareContainer = document.getElementById("compare-container");
 
     let currentFilename = null;
     let currentParams = null;
     let debounceTimer = null;
-    let rotation = 0;   // 0, 90, 180, 270
+    let rotation = 0;
     let flipH = false;
     let flipV = false;
+    let currentView = "side";
 
     function setLoading(on) {
-      loadingOverlay.classList.toggle("visible", on);
+      loadingSide.classList.toggle("visible", on);
+      loadingCompare.classList.toggle("visible", on);
     }
 
     function schedulePreview() {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => { if (currentFilename) applyPreview(); }, 300);
     }
+
+    // 表示切り替え
+    document.querySelectorAll(".view-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentView = btn.dataset.view;
+        sideBySide.style.display = currentView === "side" ? "flex" : "none";
+        compareView.style.display = currentView === "compare" ? "block" : "none";
+      });
+    });
 
     // スライダー値の表示更新 + リアルタイムプレビュー
     ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
@@ -229,7 +337,7 @@
       if (currentFilename) applyPreview();
     });
 
-    // 回転・反転ボタン
+    // 回転・反転
     document.getElementById("rotate-l").addEventListener("click", () => { rotation = (rotation + 270) % 360; if (currentFilename) applyPreview(); });
     document.getElementById("rotate-r").addEventListener("click", () => { rotation = (rotation + 90) % 360; if (currentFilename) applyPreview(); });
     document.getElementById("flip-h").addEventListener("click", () => { flipH = !flipH; if (currentFilename) applyPreview(); });
@@ -238,13 +346,14 @@
     // リセット
     resetBtn.addEventListener("click", () => {
       ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
-        const slider = document.getElementById(id);
-        slider.value = 0;
+        document.getElementById(id).value = 0;
         document.getElementById(`${id}-val`).textContent = "0";
       });
       document.getElementById("white-balance").value = "none";
       rotation = 0; flipH = false; flipV = false;
-      previewImg.src = `/uploads/${currentFilename}`;
+      const src = `/uploads/${currentFilename}`;
+      previewImg.src = src;
+      compareAfter.src = src;
       currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
     });
 
@@ -273,9 +382,12 @@
       }
 
       currentFilename = data.filename;
-      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none" };
-      originalImg.src = `/uploads/${currentFilename}`;
-      previewImg.src = `/uploads/${currentFilename}`;
+      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
+      const src = `/uploads/${currentFilename}`;
+      originalImg.src = src;
+      previewImg.src = src;
+      compareBefore.src = src;
+      compareAfter.src = src;
       editor.classList.add("visible");
     }
 
@@ -304,7 +416,9 @@
       const data = await res.json();
 
       if (res.ok) {
-        previewImg.src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
+        const src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
+        previewImg.src = src;
+        compareAfter.src = src;
       }
 
       setLoading(false);
@@ -313,17 +427,14 @@
     // ダウンロード
     downloadBtn.addEventListener("click", async () => {
       if (!currentFilename || !currentParams) return;
-
       downloadBtn.disabled = true;
       downloadBtn.textContent = "処理中...";
 
       const format = document.getElementById("output-format").value;
-      const params = { ...currentParams, format };
-
       const res = await fetch("/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body: JSON.stringify({ ...currentParams, format }),
       });
 
       if (res.ok) {
@@ -339,6 +450,27 @@
       downloadBtn.disabled = false;
       downloadBtn.textContent = "ダウンロード";
     });
+
+    // 比較スライダーのドラッグ操作
+    let isDragging = false;
+
+    function updateSlider(x) {
+      const rect = compareContainer.getBoundingClientRect();
+      const pct = Math.min(Math.max((x - rect.left) / rect.width, 0), 1);
+      const pctStr = `${pct * 100}%`;
+      compareWrapper.style.width = pctStr;
+      compareHandle.style.left = pctStr;
+      // before画像の幅をコンテナ幅に合わせて固定
+      compareBefore.style.width = `${rect.width}px`;
+    }
+
+    compareContainer.addEventListener("mousedown", (e) => { isDragging = true; updateSlider(e.clientX); });
+    window.addEventListener("mousemove", (e) => { if (isDragging) updateSlider(e.clientX); });
+    window.addEventListener("mouseup", () => { isDragging = false; });
+
+    compareContainer.addEventListener("touchstart", (e) => { isDragging = true; updateSlider(e.touches[0].clientX); });
+    window.addEventListener("touchmove", (e) => { if (isDragging) updateSlider(e.touches[0].clientX); });
+    window.addEventListener("touchend", () => { isDragging = false; });
   </script>
 </body>
 </html>
