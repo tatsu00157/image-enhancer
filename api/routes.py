@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, send_from_directory, render_templ
 import config
 from core.brightness import adjust_brightness_contrast
 from core.color import adjust_white_balance
+from core.sharpen import apply_sharpness
 
 api_bp = Blueprint("api", __name__)
 
@@ -76,10 +77,12 @@ def preview():
 
     brightness = int(data.get("brightness", 0))
     contrast = int(data.get("contrast", 0))
-    white_balance = data.get("white_balance", "auto")
+    white_balance = data.get("white_balance", "none")
+    sharpness = int(data.get("sharpness", 0))
 
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
+    img = apply_sharpness(img, sharpness)
 
     preview_filename = f"preview_{data['filename'].split('.')[0]}.jpg"
     preview_path = os.path.join(config.UPLOAD_FOLDER, preview_filename)
@@ -100,10 +103,12 @@ def download():
 
     brightness = int(data.get("brightness", 0))
     contrast = int(data.get("contrast", 0))
-    white_balance = data.get("white_balance", "auto")
+    white_balance = data.get("white_balance", "none")
+    sharpness = int(data.get("sharpness", 0))
 
     img = adjust_brightness_contrast(img, brightness, contrast)
     img = adjust_white_balance(img, white_balance)
+    img = apply_sharpness(img, sharpness)
 
     download_filename = f"download_{data['filename'].split('.')[0]}.jpg"
     download_path = os.path.join(config.UPLOAD_FOLDER, download_filename)

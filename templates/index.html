@@ -45,7 +45,7 @@
     .control-group input[type=range] { width: 100%; }
     .control-group select { width: 100%; padding: 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; }
 
-    #apply-btn, #download-btn {
+    #download-btn {
       width: 100%;
       padding: 10px;
       border: none;
@@ -53,11 +53,9 @@
       font-size: 0.95rem;
       cursor: pointer;
       margin-top: 8px;
+      background: #27ae60;
+      color: #fff;
     }
-    #apply-btn { background: #4a90e2; color: #fff; }
-    #apply-btn:hover { background: #357abd; }
-    #apply-btn:disabled { background: #aaa; cursor: not-allowed; }
-    #download-btn { background: #27ae60; color: #fff; display: none; }
     #download-btn:hover { background: #1e8449; }
     #download-btn:disabled { background: #aaa; cursor: not-allowed; }
 
@@ -96,15 +94,19 @@
           <input type="range" id="contrast" min="-100" max="100" value="0">
         </div>
         <div class="control-group">
+          <label>シャープネス <span id="sharpness-val">0</span></label>
+          <input type="range" id="sharpness" min="0" max="100" value="0">
+        </div>
+        <div class="control-group">
           <label>ホワイトバランス</label>
           <select id="white-balance">
+            <option value="none">なし</option>
             <option value="auto">自動</option>
             <option value="daylight">昼光</option>
             <option value="fluorescent">蛍光灯</option>
             <option value="incandescent">電球</option>
           </select>
         </div>
-        <button id="apply-btn">補正を適用</button>
         <button id="download-btn">ダウンロード</button>
         <div id="status"></div>
       </div>
@@ -129,7 +131,6 @@
     const originalImg = document.getElementById("original-img");
     const previewImg = document.getElementById("preview-img");
     const errorMsg = document.getElementById("error-msg");
-    const applyBtn = document.getElementById("apply-btn");
     const downloadBtn = document.getElementById("download-btn");
     const status = document.getElementById("status");
 
@@ -144,7 +145,7 @@
     }
 
     // スライダー値の表示更新 + リアルタイムプレビュー
-    ["brightness", "contrast"].forEach(id => {
+    ["brightness", "contrast", "sharpness"].forEach(id => {
       const slider = document.getElementById(id);
       const label = document.getElementById(`${id}-val`);
       slider.addEventListener("input", () => {
@@ -182,20 +183,21 @@
       }
 
       currentFilename = data.filename;
+      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, white_balance: "none" };
       originalImg.src = `/uploads/${currentFilename}`;
       previewImg.src = `/uploads/${currentFilename}`;
       editor.classList.add("visible");
     }
 
-    // 補正適用（ボタン・リアルタイム共用）
+    // 補正適用（リアルタイム）
     async function applyPreview() {
-      applyBtn.disabled = true;
       status.textContent = "処理中...";
 
       currentParams = {
         filename: currentFilename,
         brightness: parseInt(document.getElementById("brightness").value),
         contrast: parseInt(document.getElementById("contrast").value),
+        sharpness: parseInt(document.getElementById("sharpness").value),
         white_balance: document.getElementById("white-balance").value,
       };
 
@@ -211,13 +213,8 @@
       } else {
         previewImg.src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
         status.textContent = "完了";
-        downloadBtn.style.display = "block";
       }
-
-      applyBtn.disabled = false;
     }
-
-    applyBtn.addEventListener("click", () => { if (currentFilename) applyPreview(); });
 
     // ダウンロード
     downloadBtn.addEventListener("click", async () => {

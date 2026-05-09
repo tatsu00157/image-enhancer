@@ -2,10 +2,13 @@ import cv2
 import numpy as np
 
 
-def adjust_white_balance(img, mode="auto"):
+def adjust_white_balance(img, mode="none"):
     """
-    mode: "auto" | "daylight" | "fluorescent" | "incandescent"
+    mode: "none" | "auto" | "daylight" | "fluorescent" | "incandescent"
     """
+    if mode == "none":
+        return img
+
     if mode == "auto":
         result = img.copy().astype(np.float32)
         avg_b = np.mean(result[:, :, 0])
