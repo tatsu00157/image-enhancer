@@ -98,6 +98,10 @@
           <input type="range" id="sharpness" min="0" max="100" value="0">
         </div>
         <div class="control-group">
+          <label>ノイズ除去 <span id="noise_reduction-val">0</span></label>
+          <input type="range" id="noise_reduction" min="0" max="100" value="0">
+        </div>
+        <div class="control-group">
           <label>ホワイトバランス</label>
           <select id="white-balance">
             <option value="none">なし</option>
@@ -145,7 +149,7 @@
     }
 
     // スライダー値の表示更新 + リアルタイムプレビュー
-    ["brightness", "contrast", "sharpness"].forEach(id => {
+    ["brightness", "contrast", "sharpness", "noise_reduction"].forEach(id => {
       const slider = document.getElementById(id);
       const label = document.getElementById(`${id}-val`);
       slider.addEventListener("input", () => {
@@ -183,7 +187,7 @@
       }
 
       currentFilename = data.filename;
-      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, white_balance: "none" };
+      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, white_balance: "none" };
       originalImg.src = `/uploads/${currentFilename}`;
       previewImg.src = `/uploads/${currentFilename}`;
       editor.classList.add("visible");
@@ -198,6 +202,7 @@
         brightness: parseInt(document.getElementById("brightness").value),
         contrast: parseInt(document.getElementById("contrast").value),
         sharpness: parseInt(document.getElementById("sharpness").value),
+        noise_reduction: parseInt(document.getElementById("noise_reduction").value),
         white_balance: document.getElementById("white-balance").value,
       };
 
