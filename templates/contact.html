@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}お問い合わせ — PhotoTune{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <h1>お問い合わせ</h1>
+
+  <p>PhotoTuneに関するご要望・ご意見・不具合のご報告などは、下記のメールにてお受けしております。</p>
+  <p>お気軽にお問い合わせください。</p>
+
+  <h2>こんなお問い合わせを受け付けています</h2>
+  <ul>
+    <li>機能に関するご要望・アイデア</li>
+    <li>不具合・エラーのご報告</li>
+    <li>操作方法に関するご質問</li>
+    <li>プライバシーポリシー・利用規約に関するお問い合わせ</li>
+    <li>その他、サービスに関すること全般</li>
+  </ul>
+
+  <h2>お願い</h2>
+  <ul>
+    <li>お返事にはお時間をいただく場合があります。</li>
+    <li>内容によってはご回答できない場合がございます。あらかじめご了承ください。</li>
+  </ul>
+
+  <h2>運営者</h2>
+  <p>【屋号】</p>
+
+  <div style="margin-top: 32px; text-align: center;">
+    <a href="mailto:【メールアドレス】?subject=【PhotoTune】お問い合わせ&body=※件名は変更・削除しないようにお願いします。%0A%0Aお問い合わせ内容をこちらにご記入ください。%0A%0A" class="contact-btn">
+      メールでお問い合わせ
+    </a>
+  </div>
+</div>
+
+<style>
+  .contact-btn {
+    display: inline-block;
+    background: #e91e8c;
+    color: #fff;
+    text-decoration: none;
+    padding: 14px 40px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  .contact-btn:hover { background: #c2185b; }
+</style>
+{% endblock %}

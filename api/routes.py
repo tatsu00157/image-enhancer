@@ -157,6 +157,11 @@ def download():
     return send_file(download_path, as_attachment=True, download_name=f"enhanced.{fmt}")
 
 
+@api_bp.route("/contact")
+def contact():
+    return render_template("contact.html")
+
+
 @api_bp.route("/privacy")
 def privacy():
     return render_template("privacy.html")
