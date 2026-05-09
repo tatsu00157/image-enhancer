@@ -1,476 +1,505 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>画像補正アプリ</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f5f5f5; color: #333; }
-    header { background: #2c2c2c; color: #fff; padding: 16px 24px; }
-    header h1 { font-size: 1.2rem; }
-    main { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+{% extends "base.html" %}
+{% block title %}画像補正ツール — 画像をかんたん補正{% endblock %}
 
-    /* アップロードゾーン */
-    #drop-zone {
-      border: 2px dashed #aaa;
-      border-radius: 8px;
-      background: #fff;
-      padding: 48px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-    #drop-zone.dragover { border-color: #4a90e2; background: #eef4ff; }
-    #drop-zone p { color: #888; margin-top: 8px; font-size: 0.9rem; }
-    #file-input { display: none; }
-    #error-msg { color: #c0392b; margin-top: 10px; font-size: 0.9rem; }
+{% block head %}
+<style>
+  main { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
 
-    /* 補正エリア */
-    #editor { display: none; margin-top: 32px; gap: 24px; }
-    #editor.visible { display: flex; }
+  /* 使い方 */
+  #how-to-use { margin-bottom: 40px; }
+  #how-to-use h2 { font-size: 1.1rem; color: #e91e8c; margin-bottom: 16px; }
+  .steps { display: flex; gap: 16px; flex-wrap: wrap; }
+  .step {
+    flex: 1;
+    min-width: 160px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(233,30,140,0.1);
+    border-top: 3px solid #f48cbf;
+  }
+  .step .num {
+    display: inline-block;
+    background: #e91e8c;
+    color: #fff;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    line-height: 28px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .step p { font-size: 0.85rem; color: #555; line-height: 1.6; }
 
-    /* スライダーパネル */
-    #controls {
-      width: 240px;
-      flex-shrink: 0;
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-    #controls h2 { font-size: 0.95rem; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-    .control-group { margin-bottom: 18px; }
-    .control-group label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
-    .control-group input[type=range] { width: 100%; }
-    .control-group select { width: 100%; padding: 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; }
+  /* アップロードゾーン */
+  #drop-zone {
+    border: 2px dashed #f48cbf;
+    border-radius: 10px;
+    background: #fff;
+    padding: 48px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  #drop-zone:hover, #drop-zone.dragover { border-color: #e91e8c; background: #fff0f8; }
+  #drop-zone svg { color: #f48cbf; }
+  #drop-zone .upload-title { font-size: 1rem; color: #e91e8c; margin-top: 12px; font-weight: bold; }
+  #drop-zone p { color: #aaa; margin-top: 6px; font-size: 0.85rem; }
+  #file-input { display: none; }
+  #error-msg { color: #c0392b; margin-top: 10px; font-size: 0.9rem; }
 
-    .btn {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    #reset-btn { background: #f0f0f0; color: #555; }
-    #reset-btn:hover { background: #e0e0e0; }
-    .tool-btn {
-      flex: 1;
-      padding: 6px 4px;
-      font-size: 0.78rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #fafafa;
-      cursor: pointer;
-      min-width: 56px;
-    }
-    .tool-btn:hover { background: #e8e8e8; }
-    #download-btn { background: #27ae60; color: #fff; }
-    #download-btn:hover { background: #1e8449; }
-    #download-btn:disabled { background: #aaa; cursor: not-allowed; }
+  /* 補正エリア */
+  #editor { display: none; margin-top: 32px; gap: 24px; }
+  #editor.visible { display: flex; }
 
-    /* プレビューエリア */
-    #preview-area { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  /* スライダーパネル */
+  #controls {
+    width: 240px;
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 6px rgba(233,30,140,0.1);
+  }
+  #controls h2 { font-size: 0.95rem; margin-bottom: 16px; border-bottom: 2px solid #fce4ec; padding-bottom: 8px; color: #e91e8c; }
+  .control-group { margin-bottom: 16px; }
+  .control-group label { display: flex; justify-content: space-between; font-size: 0.82rem; color: #666; margin-bottom: 4px; }
+  .control-group input[type=range] {
+    width: 100%;
+    accent-color: #e91e8c;
+  }
+  .control-group select {
+    width: 100%; padding: 5px;
+    font-size: 0.85rem;
+    border: 1px solid #f48cbf;
+    border-radius: 5px;
+    outline: none;
+  }
+  .control-group select:focus { border-color: #e91e8c; }
 
-    /* 表示切り替えボタン */
-    #view-toggle { display: flex; gap: 8px; }
-    .view-btn {
-      padding: 6px 14px;
-      font-size: 0.82rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #fafafa;
-      cursor: pointer;
-    }
-    .view-btn.active { background: #2c2c2c; color: #fff; border-color: #2c2c2c; }
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  #reset-btn { background: #fce4ec; color: #e91e8c; }
+  #reset-btn:hover { background: #f8bbd0; }
+  .tool-btn {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 0.75rem;
+    border: 1px solid #f48cbf;
+    border-radius: 4px;
+    background: #fff;
+    color: #e91e8c;
+    cursor: pointer;
+    min-width: 56px;
+    transition: background 0.15s;
+  }
+  .tool-btn:hover { background: #fce4ec; }
+  #download-btn { background: #e91e8c; color: #fff; }
+  #download-btn:hover { background: #c2185b; }
+  #download-btn:disabled { background: #ccc; cursor: not-allowed; }
 
-    /* 並べて表示 */
-    #side-by-side { display: flex; gap: 16px; }
-    .preview-box {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      position: relative;
-    }
-    .preview-box h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
-    .preview-box img { width: 100%; border-radius: 4px; display: block; }
+  /* プレビューエリア */
+  #preview-area { flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
-    /* ローディングオーバーレイ */
-    .loading-overlay {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.6);
-      border-radius: 8px;
-      align-items: center;
-      justify-content: center;
-    }
-    .loading-overlay.visible { display: flex; }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 4px solid #ddd;
-      border-top-color: #4a90e2;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+  #view-toggle { display: flex; gap: 8px; }
+  .view-btn {
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    border: 1px solid #f48cbf;
+    border-radius: 20px;
+    background: #fff;
+    color: #e91e8c;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .view-btn.active { background: #e91e8c; color: #fff; border-color: #e91e8c; }
 
-    /* 比較スライダー */
-    #compare-view {
-      display: none;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      padding: 12px;
-      position: relative;
-    }
-    #compare-view h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
-    #compare-container {
-      position: relative;
-      overflow: hidden;
-      border-radius: 4px;
-      cursor: ew-resize;
-      user-select: none;
-    }
-    #compare-after { display: block; width: 100%; }
-    #compare-before-wrapper {
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      overflow: hidden;
-      width: 50%;
-    }
-    #compare-before { display: block; width: 100%; max-width: none; position: absolute; top: 0; left: 0; }
-    #compare-handle {
-      position: absolute;
-      top: 0; bottom: 0;
-      left: 50%;
-      width: 3px;
-      background: #fff;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #compare-handle::after {
-      content: "◀ ▶";
-      position: absolute;
-      background: #fff;
-      border-radius: 50px;
-      padding: 4px 8px;
-      font-size: 0.7rem;
-      color: #555;
-      white-space: nowrap;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    }
-    /* 比較スライダー内のローディング */
-    #compare-view .loading-overlay { border-radius: 8px; }
-  </style>
-</head>
-<body>
-  <header><h1>画像補正アプリ</h1></header>
-  <main>
-    <div id="drop-zone">
-      <svg width="40" height="40" fill="none" stroke="#aaa" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      <p>クリックまたはドラッグ&ドロップで画像をアップロード</p>
-      <p>JPG / PNG / WEBP &nbsp;|&nbsp; 最大 20MB</p>
-      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp">
-    </div>
-    <div id="error-msg"></div>
+  #side-by-side { display: flex; gap: 16px; }
+  .preview-box {
+    flex: 1;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 6px rgba(233,30,140,0.1);
+    position: relative;
+  }
+  .preview-box h3 { font-size: 0.82rem; color: #f48cbf; margin-bottom: 8px; font-weight: bold; }
+  .preview-box img { width: 100%; border-radius: 6px; display: block; }
 
-    <div id="editor">
-      <div id="controls">
-        <h2>補正設定</h2>
-        <div class="control-group">
-          <label>明るさ <span id="brightness-val">0</span></label>
-          <input type="range" id="brightness" min="-100" max="100" value="0">
-        </div>
-        <div class="control-group">
-          <label>コントラスト <span id="contrast-val">0</span></label>
-          <input type="range" id="contrast" min="-100" max="100" value="0">
-        </div>
-        <div class="control-group">
-          <label>シャープネス <span id="sharpness-val">0</span></label>
-          <input type="range" id="sharpness" min="0" max="100" value="0">
-        </div>
-        <div class="control-group">
-          <label>ノイズ除去 <span id="noise_reduction-val">0</span></label>
-          <input type="range" id="noise_reduction" min="0" max="100" value="0">
-        </div>
-        <div class="control-group">
-          <label>影・照明補正 <span id="shadow_correction-val">0</span></label>
-          <input type="range" id="shadow_correction" min="0" max="100" value="0">
-        </div>
-        <div class="control-group">
-          <label>ホワイトバランス</label>
-          <select id="white-balance">
-            <option value="none">なし</option>
-            <option value="auto">自動</option>
-            <option value="daylight">昼光</option>
-            <option value="fluorescent">蛍光灯</option>
-            <option value="incandescent">電球</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label style="margin-bottom:8px;">回転・反転</label>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="tool-btn" id="rotate-l">↺ 左90°</button>
-            <button class="tool-btn" id="rotate-r">↻ 右90°</button>
-            <button class="tool-btn" id="flip-h">↔ 左右</button>
-            <button class="tool-btn" id="flip-v">↕ 上下</button>
-          </div>
-        </div>
-        <div class="control-group">
-          <label>出力形式</label>
-          <select id="output-format">
-            <option value="jpg">JPG（ファイルサイズ小）</option>
-            <option value="png">PNG（高品質・透過対応）</option>
-          </select>
-        </div>
-        <button id="reset-btn" class="btn">リセット</button>
-        <button id="download-btn" class="btn">ダウンロード</button>
+  .loading-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-overlay.visible { display: flex; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 4px solid #fce4ec;
+    border-top-color: #e91e8c;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 比較スライダー */
+  #compare-view {
+    display: none;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(233,30,140,0.1);
+    padding: 12px;
+    position: relative;
+  }
+  #compare-view h3 { font-size: 0.82rem; color: #f48cbf; margin-bottom: 8px; font-weight: bold; }
+  #compare-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    cursor: ew-resize;
+    user-select: none;
+  }
+  #compare-after { display: block; width: 100%; }
+  #compare-before-wrapper {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    overflow: hidden;
+    width: 50%;
+  }
+  #compare-before { display: block; width: 100%; max-width: none; position: absolute; top: 0; left: 0; }
+  #compare-handle {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 3px;
+    background: #e91e8c;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #compare-handle::after {
+    content: "◀ ▶";
+    position: absolute;
+    background: #e91e8c;
+    color: #fff;
+    border-radius: 50px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <!-- 使い方 -->
+  <section id="how-to-use">
+    <h2>使い方</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <p>画像をアップロード<br>JPG・PNG・WEBPに対応</p>
       </div>
-
-      <div id="preview-area">
-        <!-- 表示切り替え -->
-        <div id="view-toggle">
-          <button class="view-btn active" data-view="side">並べて表示</button>
-          <button class="view-btn" data-view="compare">スライダー比較</button>
-        </div>
-
-        <!-- 並べて表示 -->
-        <div id="side-by-side">
-          <div class="preview-box">
-            <h3>補正前</h3>
-            <img id="original-img" src="" alt="補正前">
-          </div>
-          <div class="preview-box">
-            <h3>補正後</h3>
-            <img id="preview-img" src="" alt="補正後">
-            <div class="loading-overlay" id="loading-side"><div class="spinner"></div></div>
-          </div>
-        </div>
-
-        <!-- スライダー比較 -->
-        <div id="compare-view">
-          <h3>補正前 ◀ドラッグ▶ 補正後</h3>
-          <div id="compare-container">
-            <img id="compare-after" src="" alt="補正後">
-            <div id="compare-before-wrapper">
-              <img id="compare-before" src="" alt="補正前">
-            </div>
-            <div id="compare-handle"></div>
-          </div>
-          <div class="loading-overlay" id="loading-compare"><div class="spinner"></div></div>
-        </div>
+      <div class="step">
+        <div class="num">2</div>
+        <p>スライダーで補正<br>明るさ・コントラストなどをリアルタイム調整</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <p>プレビューで確認<br>補正前後を並べて比較</p>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <p>ダウンロード<br>JPG・PNG形式で保存</p>
       </div>
     </div>
-  </main>
+  </section>
 
-  <script>
-    const dropZone = document.getElementById("drop-zone");
-    const fileInput = document.getElementById("file-input");
-    const editor = document.getElementById("editor");
-    const originalImg = document.getElementById("original-img");
-    const previewImg = document.getElementById("preview-img");
-    const errorMsg = document.getElementById("error-msg");
-    const downloadBtn = document.getElementById("download-btn");
-    const resetBtn = document.getElementById("reset-btn");
-    const loadingSide = document.getElementById("loading-side");
-    const loadingCompare = document.getElementById("loading-compare");
-    const sideBySide = document.getElementById("side-by-side");
-    const compareView = document.getElementById("compare-view");
-    const compareAfter = document.getElementById("compare-after");
-    const compareBefore = document.getElementById("compare-before");
-    const compareWrapper = document.getElementById("compare-before-wrapper");
-    const compareHandle = document.getElementById("compare-handle");
-    const compareContainer = document.getElementById("compare-container");
+  <!-- アップロード -->
+  <div id="drop-zone">
+    <svg width="44" height="44" fill="none" stroke="#f48cbf" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="upload-title">クリックまたはドラッグ&ドロップ</div>
+    <p>JPG / PNG / WEBP &nbsp;|&nbsp; 最大 20MB</p>
+    <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp">
+  </div>
+  <div id="error-msg"></div>
 
-    let currentFilename = null;
-    let currentParams = null;
-    let debounceTimer = null;
-    let rotation = 0;
-    let flipH = false;
-    let flipV = false;
-    let currentView = "side";
+  <!-- 補正エリア -->
+  <div id="editor">
+    <div id="controls">
+      <h2>補正設定</h2>
+      <div class="control-group">
+        <label>明るさ <span id="brightness-val">0</span></label>
+        <input type="range" id="brightness" min="-100" max="100" value="0">
+      </div>
+      <div class="control-group">
+        <label>コントラスト <span id="contrast-val">0</span></label>
+        <input type="range" id="contrast" min="-100" max="100" value="0">
+      </div>
+      <div class="control-group">
+        <label>シャープネス <span id="sharpness-val">0</span></label>
+        <input type="range" id="sharpness" min="0" max="100" value="0">
+      </div>
+      <div class="control-group">
+        <label>ノイズ除去 <span id="noise_reduction-val">0</span></label>
+        <input type="range" id="noise_reduction" min="0" max="100" value="0">
+      </div>
+      <div class="control-group">
+        <label>影・照明補正 <span id="shadow_correction-val">0</span></label>
+        <input type="range" id="shadow_correction" min="0" max="100" value="0">
+      </div>
+      <div class="control-group">
+        <label>ホワイトバランス</label>
+        <select id="white-balance">
+          <option value="none">なし</option>
+          <option value="auto">自動</option>
+          <option value="daylight">昼光</option>
+          <option value="fluorescent">蛍光灯</option>
+          <option value="incandescent">電球</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label style="margin-bottom:8px;">回転・反転</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="tool-btn" id="rotate-l">↺ 左90°</button>
+          <button class="tool-btn" id="rotate-r">↻ 右90°</button>
+          <button class="tool-btn" id="flip-h">↔ 左右</button>
+          <button class="tool-btn" id="flip-v">↕ 上下</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label>出力形式</label>
+        <select id="output-format">
+          <option value="jpg">JPG（ファイルサイズ小）</option>
+          <option value="png">PNG（高品質・透過対応）</option>
+        </select>
+      </div>
+      <button id="reset-btn" class="btn">リセット</button>
+      <button id="download-btn" class="btn">ダウンロード</button>
+    </div>
 
-    function setLoading(on) {
-      loadingSide.classList.toggle("visible", on);
-      loadingCompare.classList.toggle("visible", on);
-    }
+    <div id="preview-area">
+      <div id="view-toggle">
+        <button class="view-btn active" data-view="side">並べて表示</button>
+        <button class="view-btn" data-view="compare">スライダー比較</button>
+      </div>
 
-    function schedulePreview() {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => { if (currentFilename) applyPreview(); }, 300);
-    }
+      <div id="side-by-side">
+        <div class="preview-box">
+          <h3>補正前</h3>
+          <img id="original-img" src="" alt="補正前">
+        </div>
+        <div class="preview-box">
+          <h3>補正後</h3>
+          <img id="preview-img" src="" alt="補正後">
+          <div class="loading-overlay" id="loading-side"><div class="spinner"></div></div>
+        </div>
+      </div>
 
-    // 表示切り替え
-    document.querySelectorAll(".view-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentView = btn.dataset.view;
-        sideBySide.style.display = currentView === "side" ? "flex" : "none";
-        compareView.style.display = currentView === "compare" ? "block" : "none";
-      });
-    });
+      <div id="compare-view">
+        <h3>補正前 ◀ドラッグ▶ 補正後</h3>
+        <div id="compare-container">
+          <img id="compare-after" src="" alt="補正後">
+          <div id="compare-before-wrapper">
+            <img id="compare-before" src="" alt="補正前">
+          </div>
+          <div id="compare-handle"></div>
+        </div>
+        <div class="loading-overlay" id="loading-compare"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+</main>
 
-    // スライダー値の表示更新 + リアルタイムプレビュー
-    ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
-      const slider = document.getElementById(id);
-      const label = document.getElementById(`${id}-val`);
-      slider.addEventListener("input", () => {
-        label.textContent = slider.value;
-        schedulePreview();
-      });
-    });
+<script>
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const editor = document.getElementById("editor");
+  const originalImg = document.getElementById("original-img");
+  const previewImg = document.getElementById("preview-img");
+  const errorMsg = document.getElementById("error-msg");
+  const downloadBtn = document.getElementById("download-btn");
+  const resetBtn = document.getElementById("reset-btn");
+  const loadingSide = document.getElementById("loading-side");
+  const loadingCompare = document.getElementById("loading-compare");
+  const sideBySide = document.getElementById("side-by-side");
+  const compareView = document.getElementById("compare-view");
+  const compareAfter = document.getElementById("compare-after");
+  const compareBefore = document.getElementById("compare-before");
+  const compareWrapper = document.getElementById("compare-before-wrapper");
+  const compareHandle = document.getElementById("compare-handle");
+  const compareContainer = document.getElementById("compare-container");
 
-    document.getElementById("white-balance").addEventListener("change", () => {
-      if (currentFilename) applyPreview();
-    });
+  let currentFilename = null;
+  let currentParams = null;
+  let debounceTimer = null;
+  let rotation = 0;
+  let flipH = false;
+  let flipV = false;
+  let currentView = "side";
 
-    // 回転・反転
-    document.getElementById("rotate-l").addEventListener("click", () => { rotation = (rotation + 270) % 360; if (currentFilename) applyPreview(); });
-    document.getElementById("rotate-r").addEventListener("click", () => { rotation = (rotation + 90) % 360; if (currentFilename) applyPreview(); });
-    document.getElementById("flip-h").addEventListener("click", () => { flipH = !flipH; if (currentFilename) applyPreview(); });
-    document.getElementById("flip-v").addEventListener("click", () => { flipV = !flipV; if (currentFilename) applyPreview(); });
+  function setLoading(on) {
+    loadingSide.classList.toggle("visible", on);
+    loadingCompare.classList.toggle("visible", on);
+  }
 
-    // リセット
-    resetBtn.addEventListener("click", () => {
-      ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
-        document.getElementById(id).value = 0;
-        document.getElementById(`${id}-val`).textContent = "0";
-      });
-      document.getElementById("white-balance").value = "none";
-      rotation = 0; flipH = false; flipV = false;
-      const src = `/uploads/${currentFilename}`;
-      previewImg.src = src;
-      compareAfter.src = src;
-      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
-    });
+  function schedulePreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { if (currentFilename) applyPreview(); }, 300);
+  }
 
-    // アップロード
-    dropZone.addEventListener("click", () => fileInput.click());
-    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
-    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropZone.classList.remove("dragover");
-      if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener("change", () => { if (fileInput.files[0]) uploadFile(fileInput.files[0]); });
-
-    async function uploadFile(file) {
-      errorMsg.textContent = "";
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorMsg.textContent = data.error || "アップロードに失敗しました";
-        return;
-      }
-
-      currentFilename = data.filename;
-      currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
-      const src = `/uploads/${currentFilename}`;
-      originalImg.src = src;
-      previewImg.src = src;
-      compareBefore.src = src;
-      compareAfter.src = src;
-      editor.classList.add("visible");
-    }
-
-    // 補正適用（リアルタイム）
-    async function applyPreview() {
-      setLoading(true);
-
-      currentParams = {
-        filename: currentFilename,
-        brightness: parseInt(document.getElementById("brightness").value),
-        contrast: parseInt(document.getElementById("contrast").value),
-        sharpness: parseInt(document.getElementById("sharpness").value),
-        noise_reduction: parseInt(document.getElementById("noise_reduction").value),
-        shadow_correction: parseInt(document.getElementById("shadow_correction").value),
-        white_balance: document.getElementById("white-balance").value,
-        rotation: rotation,
-        flip_h: flipH,
-        flip_v: flipV,
-      };
-
-      const res = await fetch("/api/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentParams),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        const src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
-        previewImg.src = src;
-        compareAfter.src = src;
-      }
-
-      setLoading(false);
-    }
-
-    // ダウンロード
-    downloadBtn.addEventListener("click", async () => {
-      if (!currentFilename || !currentParams) return;
-      downloadBtn.disabled = true;
-      downloadBtn.textContent = "処理中...";
-
-      const format = document.getElementById("output-format").value;
-      const res = await fetch("/api/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...currentParams, format }),
-      });
-
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `enhanced.${format}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      downloadBtn.disabled = false;
-      downloadBtn.textContent = "ダウンロード";
-    });
-
-    // 比較スライダーのドラッグ操作
-    let isDragging = false;
-
-    function updateSlider(x) {
+  function initCompare() {
+    requestAnimationFrame(() => {
       const rect = compareContainer.getBoundingClientRect();
-      const pct = Math.min(Math.max((x - rect.left) / rect.width, 0), 1);
-      const pctStr = `${pct * 100}%`;
-      compareWrapper.style.width = pctStr;
-      compareHandle.style.left = pctStr;
-      // before画像の幅をコンテナ幅に合わせて固定
-      compareBefore.style.width = `${rect.width}px`;
+      if (rect.width > 0) {
+        compareBefore.style.width = `${rect.width}px`;
+        compareWrapper.style.width = "50%";
+        compareHandle.style.left = "50%";
+      }
+    });
+  }
+
+  document.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentView = btn.dataset.view;
+      sideBySide.style.display = currentView === "side" ? "flex" : "none";
+      compareView.style.display = currentView === "compare" ? "block" : "none";
+      if (currentView === "compare") initCompare();
+    });
+  });
+
+  ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
+    const slider = document.getElementById(id);
+    const label = document.getElementById(`${id}-val`);
+    slider.addEventListener("input", () => {
+      label.textContent = slider.value;
+      schedulePreview();
+    });
+  });
+
+  document.getElementById("white-balance").addEventListener("change", () => {
+    if (currentFilename) applyPreview();
+  });
+
+  document.getElementById("rotate-l").addEventListener("click", () => { rotation = (rotation + 270) % 360; if (currentFilename) applyPreview(); });
+  document.getElementById("rotate-r").addEventListener("click", () => { rotation = (rotation + 90) % 360; if (currentFilename) applyPreview(); });
+  document.getElementById("flip-h").addEventListener("click", () => { flipH = !flipH; if (currentFilename) applyPreview(); });
+  document.getElementById("flip-v").addEventListener("click", () => { flipV = !flipV; if (currentFilename) applyPreview(); });
+
+  resetBtn.addEventListener("click", () => {
+    ["brightness", "contrast", "sharpness", "noise_reduction", "shadow_correction"].forEach(id => {
+      document.getElementById(id).value = 0;
+      document.getElementById(`${id}-val`).textContent = "0";
+    });
+    document.getElementById("white-balance").value = "none";
+    rotation = 0; flipH = false; flipV = false;
+    const src = `/uploads/${currentFilename}`;
+    previewImg.src = src;
+    compareAfter.src = src;
+    currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
+  });
+
+  dropZone.addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) uploadFile(fileInput.files[0]); });
+
+  async function uploadFile(file) {
+    errorMsg.textContent = "";
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) { errorMsg.textContent = data.error || "アップロードに失敗しました"; return; }
+    currentFilename = data.filename;
+    currentParams = { filename: currentFilename, brightness: 0, contrast: 0, sharpness: 0, noise_reduction: 0, shadow_correction: 0, white_balance: "none", rotation: 0, flip_h: false, flip_v: false };
+    const src = `/uploads/${currentFilename}`;
+    originalImg.src = src;
+    previewImg.src = src;
+    compareBefore.src = src;
+    compareAfter.src = src;
+    editor.classList.add("visible");
+  }
+
+  async function applyPreview() {
+    setLoading(true);
+    currentParams = {
+      filename: currentFilename,
+      brightness: parseInt(document.getElementById("brightness").value),
+      contrast: parseInt(document.getElementById("contrast").value),
+      sharpness: parseInt(document.getElementById("sharpness").value),
+      noise_reduction: parseInt(document.getElementById("noise_reduction").value),
+      shadow_correction: parseInt(document.getElementById("shadow_correction").value),
+      white_balance: document.getElementById("white-balance").value,
+      rotation: rotation, flip_h: flipH, flip_v: flipV,
+    };
+    const res = await fetch("/api/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(currentParams) });
+    const data = await res.json();
+    if (res.ok) {
+      const src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
+      previewImg.src = src;
+      compareAfter.src = src;
     }
+    setLoading(false);
+  }
 
-    compareContainer.addEventListener("mousedown", (e) => { isDragging = true; updateSlider(e.clientX); });
-    window.addEventListener("mousemove", (e) => { if (isDragging) updateSlider(e.clientX); });
-    window.addEventListener("mouseup", () => { isDragging = false; });
+  downloadBtn.addEventListener("click", async () => {
+    if (!currentFilename || !currentParams) return;
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = "処理中...";
+    const format = document.getElementById("output-format").value;
+    const res = await fetch("/api/download", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...currentParams, format }) });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `enhanced.${format}`; a.click();
+      URL.revokeObjectURL(url);
+    }
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = "ダウンロード";
+  });
 
-    compareContainer.addEventListener("touchstart", (e) => { isDragging = true; updateSlider(e.touches[0].clientX); });
-    window.addEventListener("touchmove", (e) => { if (isDragging) updateSlider(e.touches[0].clientX); });
-    window.addEventListener("touchend", () => { isDragging = false; });
-  </script>
-</body>
-</html>
+  // 比較スライダー
+  let isDragging = false;
+  function updateSlider(x) {
+    const rect = compareContainer.getBoundingClientRect();
+    const pct = Math.min(Math.max((x - rect.left) / rect.width, 0), 1);
+    const pctStr = `${pct * 100}%`;
+    compareWrapper.style.width = pctStr;
+    compareHandle.style.left = pctStr;
+    compareBefore.style.width = `${rect.width}px`;
+  }
+  compareContainer.addEventListener("mousedown", (e) => { isDragging = true; updateSlider(e.clientX); });
+  window.addEventListener("mousemove", (e) => { if (isDragging) updateSlider(e.clientX); });
+  window.addEventListener("mouseup", () => { isDragging = false; });
+  compareContainer.addEventListener("touchstart", (e) => { isDragging = true; updateSlider(e.touches[0].clientX); });
+  window.addEventListener("touchmove", (e) => { if (isDragging) updateSlider(e.touches[0].clientX); });
+  window.addEventListener("touchend", () => { isDragging = false; });
+</script>
+{% endblock %}

@@ -35,7 +35,6 @@
 ```
 image-enhancer/
 ├── CLAUDE.md
-├── README.md
 ├── requirements.txt
 ├── app.py                  # Flaskエントリーポイント
 ├── config.py               # 設定ファイル
@@ -45,18 +44,15 @@ image-enhancer/
 │   ├── color.py            # 色調・ホワイトバランス補正
 │   ├── sharpen.py          # シャープネス・ぼやけ改善
 │   ├── shadow.py           # 影・照明補正
-│   ├── noise.py            # ノイズ除去
-│   └── enhance.py          # Real-ESRGAN超解像（オプション）
+│   └── noise.py            # ノイズ除去
 ├── api/
 │   ├── __init__.py
 │   └── routes.py           # APIエンドポイント定義
-├── static/
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── main.js
 ├── templates/
-│   └── index.html
+│   ├── base.html           # 共通レイアウト（ヘッダー・フッター）
+│   ├── index.html          # メインページ
+│   ├── privacy.html        # プライバシーポリシー
+│   └── terms.html          # 利用規約
 └── uploads/                # アップロード一時保存（gitignore対象）
 ```
 
@@ -78,9 +74,15 @@ image-enhancer/
 ### UI機能
 
 - 画像アップロード（ドラッグ&ドロップ対応）
-- 補正前後のプレビュー表示（並べて比較）
-- 各補正のスライダー調整
-- 補正済み画像のダウンロード
+- 補正前後のプレビュー表示（並べて比較 / スライダー比較の切り替え）
+- 各補正のリアルタイムスライダー調整・一括リセット
+- ローディングスピナー表示
+- 画像の回転・反転
+- 出力形式選択（JPG / PNG）
+- 補正済み画像のフル解像度ダウンロード
+- 使い方説明セクション
+- フッター（プライバシーポリシー・利用規約リンク）
+- ピンクテーマデザイン
 
 ---
 
@@ -88,10 +90,13 @@ image-enhancer/
 
 | メソッド | パス | 説明 |
 |---|---|---|
+| GET | / | メインページ |
+| GET | /privacy | プライバシーポリシー |
+| GET | /terms | 利用規約 |
 | POST | /api/upload | 画像アップロード |
-| POST | /api/preview | 補正プレビュー生成 |
-| POST | /api/download | 補正済み画像のダウンロード |
-| DELETE | /api/cleanup | 一時ファイル削除 |
+| POST | /api/preview | 補正プレビュー生成（長辺1000px以下にリサイズ） |
+| POST | /api/download | 補正済み画像のダウンロード（フル解像度） |
+| GET | /uploads/\<filename\> | アップロード済みファイルの配信 |
 
 ---
 
@@ -104,7 +109,11 @@ image-enhancer/
   "sharpness": 0,         // 0 〜 100
   "noise_reduction": 0,   // 0 〜 100
   "shadow_correction": 0, // 0 〜 100
-  "white_balance": "auto" // "auto" | "daylight" | "fluorescent" | "incandescent"
+  "white_balance": "none",// "none" | "auto" | "daylight" | "fluorescent" | "incandescent"
+  "rotation": 0,          // 0 | 90 | 180 | 270
+  "flip_h": false,        // 左右反転
+  "flip_v": false,        // 上下反転
+  "format": "jpg"         // "jpg" | "png"（downloadのみ）
 }
 ```
 
@@ -147,21 +156,32 @@ image-enhancer/
 - [x] プレビュー表示（補正前後の並べて比較・リアルタイム更新）
 - [x] ダウンロード機能（フル解像度）
 
-### Phase 2（追加機能）
+### Phase 2（追加機能）✅ 完了
 - [x] 影・照明補正（CLAHE）
 - [x] ノイズ除去
 - [x] シャープネス強調
 - [x] スライダーUIの改善（一括リセット・ローディングスピナー）
 
-### Phase 3（将来対応）
-- [ ] Real-ESRGAN超解像の組み込み
-- [ ] 動画対応（フレーム単位で画像補正を適用）
-- [ ] VPSデプロイ対応
-
-### 追加機能
+### 追加機能 ✅ 完了
 - [x] 出力形式の選択（JPG / PNG）
 - [x] 画像の回転・反転
 - [x] 比較スライダー（補正前後を1枚でドラッグ比較）
+
+### デザイン・ページ整備
+- [x] ピンクテーマデザイン（ビジネスイメージカラー）
+- [x] 使い方説明セクション（4ステップ）
+- [x] ヘッダー・フッター
+- [x] プライバシーポリシーページ（/privacy）
+- [x] 利用規約ページ（/terms）
+- [x] Jinja2テンプレート継承（base.html）
+- [ ] サイト名の決定・反映
+- [ ] ファビコン設定
+- [ ] レスポンシブ対応（スマホ表示）
+
+### Phase 3（将来対応）
+- [ ] Real-ESRGAN超解像の組み込み（GPU環境必要）
+- [ ] 動画対応（フレーム単位で画像補正を適用）
+- [ ] VPSデプロイ対応
 
 ---
 
@@ -181,11 +201,11 @@ python3 app.py
 
 ---
 
-## requirements.txt（予定）
+## requirements.txt
 
 ```
-Flask==3.0.0
+Flask==3.0.3
 opencv-python==4.9.0.80
-Pillow==10.2.0
+Pillow==10.3.0
 numpy==1.26.4
 ```

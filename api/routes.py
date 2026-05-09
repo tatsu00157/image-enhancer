@@ -157,6 +157,16 @@ def download():
     return send_file(download_path, as_attachment=True, download_name=f"enhanced.{fmt}")
 
 
+@api_bp.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@api_bp.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+
 @api_bp.route("/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(config.UPLOAD_FOLDER, filename)

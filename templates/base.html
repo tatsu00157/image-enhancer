@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}画像補正ツール{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #fff8fb; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ヘッダー */
+    header {
+      background: linear-gradient(135deg, #e91e8c, #f48cbf);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(233,30,140,0.25);
+    }
+    header .logo { font-size: 1.3rem; font-weight: bold; letter-spacing: 0.02em; }
+    header .tagline { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+    header a { color: #fff; text-decoration: none; }
+
+    main { flex: 1; }
+
+    /* フッター */
+    footer {
+      background: #2c2c2c;
+      color: #ccc;
+      padding: 40px 24px 28px;
+      margin-top: 60px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .footer-inner { max-width: 1100px; margin: 0 auto; }
+    .footer-logo { color: #fff; font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
+    .footer-tagline { color: #888; font-size: 0.8rem; margin-bottom: 24px; }
+    .footer-links { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-bottom: 24px; }
+    .footer-links a { color: #bbb; text-decoration: none; font-size: 0.85rem; }
+    .footer-links a:hover { color: #f48cbf; }
+    .footer-divider { border: none; border-top: 1px solid #444; margin-bottom: 20px; }
+    .footer-copy { color: #666; font-size: 0.78rem; }
+
+    /* 共通コンテンツ */
+    .page-content { max-width: 800px; margin: 48px auto; padding: 0 16px; }
+    .page-content h1 { font-size: 1.4rem; color: #e91e8c; margin-bottom: 24px; }
+    .page-content h2 { font-size: 1rem; margin: 28px 0 8px; color: #444; }
+    .page-content p { line-height: 1.8; color: #555; margin-bottom: 8px; }
+    .page-content ul { padding-left: 20px; color: #555; line-height: 1.9; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div>
+      <a href="/"><div class="logo">画像補正ツール</div></a>
+      <div class="tagline">画像をかんたんに補正・ダウンロード</div>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">画像補正ツール</div>
+      <div class="footer-tagline">画像をかんたんに補正・ダウンロード</div>
+      <div class="footer-links">
+        <a href="/">ホーム</a>
+        <a href="/privacy">プライバシーポリシー</a>
+        <a href="/terms">利用規約</a>
+      </div>
+      <hr class="footer-divider">
+      <div class="footer-copy">© 2025 画像補正ツール. All rights reserved.</div>
+    </div>
+  </footer>
+</body>
+</html>
