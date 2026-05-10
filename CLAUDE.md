@@ -184,7 +184,11 @@ image-enhancer/
 - [x] デバッグモードを環境変数で制御（FLASK_DEBUG=false）
 - [x] Gunicorn追加（requirements.txt）
 - [x] アップロードファイルの自動削除（30分経過で削除・ダウンロードファイルは即削除）
-- [x] .env.example追加（VPS設定用ドキュメント）
+- [x] MIMEタイプ検証（Pillowのverify()で画像ファイルの内容を検証）
+- [x] レートリミット（Flask-Limiter：アップロード10回/分、プレビュー60回/分、ダウンロード10回/分、全体200回/時）
+- [x] 429エラーを日本語表示・制限中はリクエスト停止・60秒後に自動解除
+- [x] uploads/フォルダを起動時に自動作成（VPS初回デプロイ対応）
+- [x] python-dotenv導入（.envを自動読み込み）
 - [x] Jinja2テンプレート継承（base.html）
 - [x] スライダーパネルとプレビューエリアの高さ統一（object-fit: contain）
 - [x] 補正機能の説明をエディタ下にカードグリッド形式で表示
