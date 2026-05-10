@@ -3,6 +3,7 @@ import time
 import uuid
 import cv2
 import numpy as np
+from PIL import Image
 from flask import Blueprint, request, jsonify, send_from_directory, render_template, send_file, after_this_request
 import config
 from core.brightness import adjust_brightness_contrast
@@ -97,6 +98,13 @@ def upload():
     filename = f"{uuid.uuid4().hex}.{ext}"
     save_path = os.path.join(config.UPLOAD_FOLDER, filename)
     file.save(save_path)
+
+    try:
+        with Image.open(save_path) as img:
+            img.verify()
+    except Exception:
+        os.remove(save_path)
+        return jsonify({"error": "有効な画像ファイルではありません"}), 400
 
     return jsonify({"filename": filename})
 
