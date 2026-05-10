@@ -368,6 +368,7 @@
 </main>
 
 <script>
+  let rateLimited = false;
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("file-input");
   const originalImg = document.getElementById("original-img");
@@ -482,6 +483,7 @@
   }
 
   async function applyPreview() {
+    if (rateLimited) return;
     errorMsg.textContent = "";
     setLoading(true);
     currentParams = {
@@ -499,6 +501,10 @@
     if (res.ok) {
       const src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
       previewImg.src = src; compareAfter.src = src;
+    } else if (res.status === 429) {
+      rateLimited = true;
+      errorMsg.textContent = data.error || "リクエストが多すぎます。しばらく待ってから再度お試しください。";
+      setTimeout(() => { rateLimited = false; errorMsg.textContent = ""; }, 60000);
     } else {
       errorMsg.textContent = data.error || "プレビューに失敗しました";
     }
