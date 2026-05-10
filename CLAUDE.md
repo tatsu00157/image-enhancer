@@ -38,6 +38,8 @@ image-enhancer/
 ├── requirements.txt
 ├── app.py                  # Flaskエントリーポイント
 ├── config.py               # 設定ファイル
+├── extensions.py           # Flask-Limiter初期化
+├── create_ogp.py           # OGP画像生成スクリプト（再生成用）
 ├── core/
 │   ├── __init__.py
 │   ├── brightness.py       # 明るさ・コントラスト補正
@@ -52,8 +54,15 @@ image-enhancer/
 │   ├── base.html           # 共通レイアウト（ヘッダー・フッター）
 │   ├── index.html          # メインページ
 │   ├── privacy.html        # プライバシーポリシー
-│   └── terms.html          # 利用規約
-└── uploads/                # アップロード一時保存（gitignore対象）
+│   ├── terms.html          # 利用規約
+│   ├── contact.html        # お問い合わせ
+│   └── 404.html            # カスタムエラーページ
+├── static/
+│   ├── favicon.svg         # ファビコン（魔法の杖）
+│   ├── ogp.png             # OGP画像（1200×630px）
+│   ├── css/
+│   └── js/
+└── uploads/                # アップロード一時保存（gitignore対象、起動時自動作成）
 ```
 
 ---
@@ -99,6 +108,8 @@ image-enhancer/
 | POST | /api/preview | 補正プレビュー生成（長辺1000px以下にリサイズ） |
 | POST | /api/download | 補正済み画像のダウンロード（フル解像度） |
 | GET | /uploads/\<filename\> | アップロード済みファイルの配信 |
+| GET | /robots.txt | クローラー制御ファイル |
+| GET | /sitemap.xml | サイトマップ |
 
 ---
 
@@ -231,6 +242,9 @@ python3 app.py
 
 ```
 Flask==3.0.3
+gunicorn==22.0.0
+python-dotenv==1.0.1
+Flask-Limiter==3.8.0
 opencv-python==4.9.0.80
 Pillow==10.3.0
 numpy==1.26.4
