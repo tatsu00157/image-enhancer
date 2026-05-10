@@ -1,8 +1,9 @@
 import os
+import time
 import uuid
 import cv2
 import numpy as np
-from flask import Blueprint, request, jsonify, send_from_directory, render_template, send_file
+from flask import Blueprint, request, jsonify, send_from_directory, render_template, send_file, after_this_request
 import config
 from core.brightness import adjust_brightness_contrast
 from core.color import adjust_white_balance
@@ -11,6 +12,19 @@ from core.noise import apply_noise_reduction
 from core.shadow import apply_shadow_correction
 
 api_bp = Blueprint("api", __name__)
+
+
+def cleanup_old_uploads():
+    """30分以上経過したアップロードファイルを削除する"""
+    now = time.time()
+    folder = config.UPLOAD_FOLDER
+    for fname in os.listdir(folder):
+        fpath = os.path.join(folder, fname)
+        if os.path.isfile(fpath) and now - os.path.getmtime(fpath) > config.UPLOAD_EXPIRE_SECONDS:
+            try:
+                os.remove(fpath)
+            except OSError:
+                pass
 
 
 def allowed_file(filename):
@@ -76,6 +90,8 @@ def upload():
 
     if not allowed_file(file.filename):
         return jsonify({"error": "対応していないファイル形式です（jpg/jpeg/png/webp のみ）"}), 400
+
+    cleanup_old_uploads()
 
     ext = file.filename.rsplit(".", 1)[-1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
@@ -154,6 +170,14 @@ def download():
     else:
         cv2.imwrite(download_path, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
 
+    @after_this_request
+    def remove_download(response):
+        try:
+            os.remove(download_path)
+        except OSError:
+            pass
+        return response
+
     return send_file(download_path, as_attachment=True, download_name=f"enhanced.{fmt}")
 
 
@@ -175,3 +199,43 @@ def terms():
 @api_bp.route("/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(config.UPLOAD_FOLDER, filename)
+
+
+@api_bp.route("/robots.txt")
+def robots():
+    content = """User-agent: *
+Allow: /
+Disallow: /uploads/
+Disallow: /api/
+
+Sitemap: https://karineffort.com/sitemap.xml
+"""
+    return content, 200, {"Content-Type": "text/plain"}
+
+
+@api_bp.route("/sitemap.xml")
+def sitemap():
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://karineffort.com/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://karineffort.com/contact</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://karineffort.com/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://karineffort.com/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>"""
+    return content, 200, {"Content-Type": "application/xml"}
