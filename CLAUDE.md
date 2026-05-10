@@ -176,6 +176,8 @@ image-enhancer/
 - [x] プライバシーポリシーページ（/privacy）
 - [x] 利用規約ページ（/terms）
 - [x] お問い合わせページ（/contact）：mailto:リンクで開く、件名固定（【PhotoTune】お問い合わせ）、本文に件名削除禁止の案内を記載
+- [x] SEO対策：metaディスクリプション・OGPタグ・Twitter Cardを全ページに設定（ドメイン確定後に【ドメイン】を書き換える）
+- [x] OGP画像生成（static/ogp.png、1200×630px、create_ogp.pyで生成）
 - [x] Jinja2テンプレート継承（base.html）
 - [x] スライダーパネルとプレビューエリアの高さ統一（object-fit: contain）
 - [x] 補正機能の説明をエディタ下にカードグリッド形式で表示
