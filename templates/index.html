@@ -482,6 +482,7 @@
   }
 
   async function applyPreview() {
+    errorMsg.textContent = "";
     setLoading(true);
     currentParams = {
       filename: currentFilename,
@@ -506,6 +507,7 @@
 
   downloadBtn.addEventListener("click", async () => {
     if (!currentFilename || !currentParams) return;
+    errorMsg.textContent = "";
     downloadBtn.disabled = true; downloadBtn.textContent = "処理中...";
     const format = document.getElementById("output-format").value;
     const res = await fetch("/api/download", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...currentParams, format }) });
