@@ -498,6 +498,8 @@
     if (res.ok) {
       const src = `/uploads/${data.preview_filename}?t=${Date.now()}`;
       previewImg.src = src; compareAfter.src = src;
+    } else {
+      errorMsg.textContent = data.error || "プレビューに失敗しました";
     }
     setLoading(false);
   }
@@ -513,6 +515,9 @@
       const a = document.createElement("a");
       a.href = url; a.download = `enhanced.${format}`; a.click();
       URL.revokeObjectURL(url);
+    } else {
+      const data = await res.json();
+      errorMsg.textContent = data.error || "ダウンロードに失敗しました";
     }
     downloadBtn.disabled = false; downloadBtn.textContent = "ダウンロード";
   });

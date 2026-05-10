@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from dotenv import load_dotenv
 load_dotenv()
 import config
@@ -22,6 +22,11 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_error(e):
     return render_template("404.html"), 500
+
+
+@app.errorhandler(429)
+def ratelimit_error(e):
+    return jsonify({"error": "リクエストが多すぎます。しばらく待ってから再度お試しください。"}), 429
 
 
 if __name__ == "__main__":
