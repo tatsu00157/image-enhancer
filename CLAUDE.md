@@ -218,7 +218,7 @@ image-enhancer/
 ### Phase 3（将来対応）
 - [ ] Real-ESRGAN超解像の組み込み（GPU環境必要）
 - [ ] 動画対応（フレーム単位で画像補正を適用）
-- [ ] VPSデプロイ対応
+- [x] VPSデプロイ完了（2026-05-11）
 
 ---
 
@@ -234,6 +234,36 @@ pip install -r requirements.txt
 
 # 開発サーバー起動
 python3 app.py
+```
+
+---
+
+## 本番環境（VPS）
+
+- **URL**：https://phototune.karineffort.com
+- **OS**：RockyLinux
+- **Webサーバー**：Apache（リバースプロキシ）
+- **アプリサーバー**：Gunicorn（ポート7000）
+- **プロセス管理**：systemd（phototune.service）
+- **SSL**：Let's Encrypt（certbot）
+- **デプロイ先**：/var/www/phototune
+
+### VPS操作コマンド
+
+```bash
+# 状態確認
+sudo systemctl status phototune
+
+# 再起動
+sudo systemctl restart phototune
+
+# ログ確認
+sudo journalctl -u phototune -f
+
+# コード更新時
+cd /var/www/phototune
+git pull origin main
+sudo systemctl restart phototune
 ```
 
 ---
