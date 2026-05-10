@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 from flask import Blueprint, request, jsonify, send_from_directory, render_template, send_file, after_this_request
 import config
+from extensions import limiter
 from core.brightness import adjust_brightness_contrast
 from core.color import adjust_white_balance
 from core.sharpen import apply_sharpness
@@ -81,6 +82,7 @@ def index():
 
 
 @api_bp.route("/api/upload", methods=["POST"])
+@limiter.limit("10 per minute")
 def upload():
     if "file" not in request.files:
         return jsonify({"error": "ファイルがありません"}), 400
@@ -110,6 +112,7 @@ def upload():
 
 
 @api_bp.route("/api/preview", methods=["POST"])
+@limiter.limit("60 per minute")
 def preview():
     data = request.get_json()
     if not data or "filename" not in data:
@@ -143,6 +146,7 @@ def preview():
 
 
 @api_bp.route("/api/download", methods=["POST"])
+@limiter.limit("10 per minute")
 def download():
     data = request.get_json()
     if not data or "filename" not in data:
