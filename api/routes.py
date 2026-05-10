@@ -220,7 +220,7 @@ Allow: /
 Disallow: /uploads/
 Disallow: /api/
 
-Sitemap: https://karineffort.com/sitemap.xml
+Sitemap: https://phototune.karineffort.com/sitemap.xml
 """
     return content, 200, {"Content-Type": "text/plain"}
 
@@ -230,22 +230,22 @@ def sitemap():
     content = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://karineffort.com/</loc>
+    <loc>https://phototune.karineffort.com/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://karineffort.com/contact</loc>
+    <loc>https://phototune.karineffort.com/contact</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://karineffort.com/privacy</loc>
+    <loc>https://phototune.karineffort.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://karineffort.com/terms</loc>
+    <loc>https://phototune.karineffort.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
