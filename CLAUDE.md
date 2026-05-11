@@ -219,6 +219,8 @@ image-enhancer/
 - [ ] Real-ESRGAN超解像の組み込み（GPU環境必要）
 - [ ] 動画対応（フレーム単位で画像補正を適用）
 - [x] VPSデプロイ完了（2026-05-11）
+- [x] Google Analytics導入（G-308T93XF7J）
+- [x] Google Search Console登録・sitemap.xml送信
 
 ---
 
