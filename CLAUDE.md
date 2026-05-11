@@ -221,6 +221,7 @@ image-enhancer/
 - [x] VPSデプロイ完了（2026-05-11）
 - [x] Google Analytics導入（G-308T93XF7J）
 - [x] Google Search Console登録・sitemap.xml送信
+- [x] プライバシーポリシーにGoogle Analytics利用を追記
 
 ---
 
